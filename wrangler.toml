@@ -1,0 +1,11 @@
+name = "api-proxy-worker"
+main = "worker/worker.js"
+compatibility_date = "2025-04-01"
+
+[[kv_namespaces]]
+binding = "API_KEYS"
+id = "eb99d6d86a524ce8b61f3c455e29dcf3"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "ef4a5a28acdb4582be74ca40aeeb155d"

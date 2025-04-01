@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Proxy Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; }
+    .hidden { display: none; }
+    .key-list { margin-top: 20px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <div id="login" class="hidden">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Admin Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="admin" class="hidden">
+    <h2>API Proxy Admin</h2>
+    <button onclick="generateKey()">Generate New API Key</button>
+    <button onclick="logout()">Logout</button>
+    <div id="keys" class="key-list"></div>
+  </div>
+
+  <script>
+    const apiUrl = '/api/admin' // Relative path since it's same domain
+
+    let authToken = localStorage.getItem('authToken')
+    document.addEventListener('DOMContentLoaded', () => checkAuth())
+
+    function checkAuth() {
+      const loginDiv = document.getElementById('login')
+      const adminDiv = document.getElementById('admin')
+      if (authToken) {
+        loginDiv.classList.add('hidden')
+        adminDiv.classList.remove('hidden')
+        loadKeys()
+      } else {
+        loginDiv.classList.remove('hidden')
+        adminDiv.classList.add('hidden')
+      }
+    }
+
+    async function login() {
+      const password = document.getElementById('password').value
+      authToken = `Bearer ${password}`
+      const response = await fetch(apiUrl, { headers: { 'Authorization': authToken } })
+      if (response.ok) {
+        localStorage.setItem('authToken', authToken)
+        checkAuth()
+      } else {
+        alert('Invalid password')
+      }
+    }
+
+    async function loadKeys() {
+      const response = await fetch(apiUrl, { headers: { 'Authorization': authToken } })
+      const keys = await response.json()
+      const keysDiv = document.getElementById('keys')
+      keysDiv.innerHTML = '<h3>Active API Keys:</h3>'
+      keys.forEach(key => {
+        keysDiv.innerHTML += `
+          <div>
+            ${key}
+            <button onclick="revokeKey('${key}')">Revoke</button>
+          </div>
+        `
+      })
+    }
+
+    async function generateKey() {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Authorization': authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate' })
+      })
+      if (response.ok) loadKeys()
+    }
+
+    async function revokeKey(key) {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Authorization': authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'revoke', key })
+      })
+      if (response.ok) loadKeys()
+    }
+
+    function logout() {
+      localStorage.removeItem('authToken')
+      authToken = null
+      checkAuth()
+    }
+  </script>
+</body>
+</html>
